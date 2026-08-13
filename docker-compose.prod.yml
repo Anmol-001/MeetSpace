@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=meetings_user
+      - POSTGRES_PASSWORD=meetings_password
+      - POSTGRES_DB=meetings_db
+    # PostgreSQL is not published to the host in production compose
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  piston:
+    image: ghcr.io/engineer-man/piston
+    restart: always
+    privileged: true
+    volumes:
+      - piston_packages:/piston/packages
+    tmpfs:
+      - /tmp:exec
+    # Piston is not published to the host
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DATABASE_URL=postgres://meetings_user:meetings_password@db:5432/meetings_db?sslmode=disable
+      - JWT_SECRET=super_secret_for_development
+      - ALLOWED_ORIGINS=http://localhost
+      - PISTON_URL=http://piston:2000/api/v2/execute
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+      - piston
+
+  sfu-server:
+    build:
+      context: ./sfu-server
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - HUB_URL=ws://backend:8080/ws/sfu-internal-channel
+      # TURN_URL, TURN_USER, TURN_PASS to be provided in Phase 3
+    depends_on:
+      - backend
+    # Note: Pion WebRTC negotiates ephemeral UDP ports dynamically. 
+    # For host bridging/production without host networking, UDP port ranges must be mapped,
+    # or TURN servers used. Not mapped in this config per Phase 1 instructions.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8080/api/v1
+    restart: always
+    ports:
+      - '80:80'
+
+volumes:
+  postgres_data:
+  piston_packages:
