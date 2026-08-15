@@ -72,14 +72,13 @@ The Go backend communicates with Piston through an HTTP API rather than executin
 - Persistent whiteboard state
 - Project-specific whiteboard data
 
-### 🎙️ Voice & Video Collaboration
+### 🎙️ Voice Collaboration
 
-MeetSpace includes a custom **Pion WebRTC SFU** for real-time audio/video communication.
+MeetSpace includes a custom **Pion WebRTC SFU** for real-time audio communication.
 
 Features include:
 
 - Voice communication
-- Video communication
 - WebRTC signaling
 - Peer connection management
 - Real-time media tracks
